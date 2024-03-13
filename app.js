@@ -4,6 +4,7 @@ const express = require("express");
 const morgan = require("morgan");
 const cors = require("cors");
 const contactsRouter = require("./routes/api/contacts");
+const usersRouter = require("./routes/api/users");
 const mongoose = require("mongoose");
 
 const app = express();
@@ -26,5 +27,9 @@ mongoose
   });
 
 app.use("/api/contacts", contactsRouter);
+app.use("/api/users", usersRouter);
+app.use("/api/users", (req, res, next) => {
+  res.status(200).send("You are on the main page");
+});
 
 module.exports = app;
