@@ -6,6 +6,10 @@ const { login } = require("./auth");
 const authMiddleware = require("./authMiddleware");
 const User = require("../../models/user");
 const bcrypt = require("bcrypt");
+const multer = require("multer");
+const path = require("path");
+const fs = require("fs");
+const jimp = require("jimp");
 
 router.post("/signup", async (req, res) => {
   const { email, password } = req.body;
@@ -30,6 +34,7 @@ router.post("/signup", async (req, res) => {
       user: {
         email: newUser.email,
         subscription: newUser.subscription,
+        avatarURL: newUser.avatarURL,
       },
     });
   } catch (error) {
@@ -69,4 +74,55 @@ router.get("/current", authMiddleware, async (req, res) => {
   }
 });
 
+const uploadDir = path.join(__dirname, "../../tmp");
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, uploadDir);
+  },
+  filename: function (req, file, cb) {
+    cb(null, file.originalname);
+  },
+});
+
+const upload = multer({ storage: storage });
+
+router.patch("/avatars", upload.single("avatar"), async (req, res) => {
+  try {
+    
+    if (!req.user) {
+      return res.status(401).json({ message: "Not authorized" });
+    }
+
+    
+    if (!req.file) {
+      return res.status(400).json({ message: "No file uploaded" });
+    }
+
+    const image = await jimp.read(req.file.path);
+
+    
+    await image.resize(250, 250);
+
+    
+    const uniqueFileName = Date.now() + "_" + req.file.originalname;
+
+    
+    await image.writeAsync(
+      path.join(__dirname, "../../public/avatars", uniqueFileName)
+    );
+
+    
+    fs.unlinkSync(req.file.path);
+
+    
+    const user = await User.findById(req.user._id);
+
+    user.avatarURL = `/avatars/${uniqueFileName}`;
+    await user.save();
+
+    res.status(200).json({ avatarURL: user.avatarURL });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
 module.exports = router;

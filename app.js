@@ -6,8 +6,11 @@ const cors = require("cors");
 const contactsRouter = require("./routes/api/contacts");
 const usersRouter = require("./routes/api/users");
 const mongoose = require("mongoose");
+const path = require("path");
 
 const app = express();
+
+app.use(express.static(path.join(__dirname, "public")));
 
 app.use(express.json());
 app.use(morgan("dev"));
