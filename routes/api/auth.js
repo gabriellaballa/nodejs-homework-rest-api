@@ -3,6 +3,7 @@
 const bcrypt = require("bcrypt");
 const User = require("../../models/user");
 const jwt = require("jsonwebtoken");
+const gravatar = require("gravatar");
 
 const signUp = async (req, res) => {
   const { email, password } = req.body;
@@ -14,11 +15,19 @@ const signUp = async (req, res) => {
       return res.status(409).json({ message: "Email in use" });
     }
 
+    const avatarURL = gravatar.url(email, { s: "200", d: "retro" });
     const hashedPassword = await bcrypt.hash(password, 10);
-    const newUser = await User.create({ email, password: hashedPassword });
-
+    const newUser = await User.create({
+      email,
+      password: hashedPassword,
+      avatarURL,
+    });
     res.status(201).json({
-      user: { email: newUser.email, subscription: newUser.subscription },
+      user: {
+        email: newUser.email,
+        subscription: newUser.subscription,
+        avatarURL: newUser.avatarURL,
+      },
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
